@@ -27,6 +27,18 @@ namespace PokemonReviewApp.Repository
             return _datacontext.PokemonCategories.Where(e=> e.CategoryId == id).Select(c=>c.Pokemon).ToList();
         }
 
+        public bool SaveCategory(Category category)
+        {
+            _datacontext.Add(category);
+            return Save();
+        }
+
+        public bool Save()
+        {
+            var saved = _datacontext.SaveChanges();
+            return saved > 0 ? true : false;
+        }
+
         public bool CategoryExist(int id)
         {
             return _datacontext.Categories.Any(data => data.Id == id);

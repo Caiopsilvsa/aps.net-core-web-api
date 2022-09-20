@@ -13,10 +13,12 @@ namespace PokemonReviewApp.Controllers
     public class OwnerController:Controller
     {
         private readonly IOwnerInterface _ownerInterface;
+        private readonly ICountryInterface _countryInterface;
         private readonly IMapper _mapper;
-        public OwnerController(IOwnerInterface ownerInterface, IMapper mapper)
+        public OwnerController(IOwnerInterface ownerInterface, ICountryInterface countryInterface, IMapper mapper)
         {
             this._ownerInterface = ownerInterface;
+            this._countryInterface = countryInterface;
             this._mapper = mapper;
         }
 
@@ -72,6 +74,44 @@ namespace PokemonReviewApp.Controllers
             }
 
             return Ok(pokemon);
+
+        }
+
+        [HttpPost]
+        [ProducesResponseType(204, Type = typeof(IEnumerable<Owner>))]
+        [ProducesResponseType(400)]
+        public IActionResult CreateOwner([FromBody] OwnerDto ownerCreate, [FromQuery] int countryId)
+        {
+            if(ownerCreate == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var ownerTest = _ownerInterface.GetOwners()
+                .Where(o => o.Name.Trim().ToUpper() == ownerCreate.Name.Trim().ToUpper())
+                .FirstOrDefault();
+
+            if(ownerTest != null)
+            {
+                ModelState.AddModelError("", "Owner já existente");
+                return StatusCode(422, ModelState);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var mappedOwner = _mapper.Map<Owner>(ownerCreate);
+                mappedOwner.Country = _countryInterface.GetCountryById(countryId);
+
+            if (!_ownerInterface.CreateOwner(mappedOwner))
+            {
+                ModelState.AddModelError("", "Um erro ocorreu durante o processamento");
+                return StatusCode(500, ModelState);
+            }
+
+            return Ok("Owner criado com sucesso!");
 
         }
 
