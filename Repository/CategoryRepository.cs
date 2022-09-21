@@ -43,5 +43,11 @@ namespace PokemonReviewApp.Repository
         {
             return _datacontext.Categories.Any(data => data.Id == id);
         }
+
+        public bool UpdateCategory(Category category)
+        {
+            _datacontext.Update(category);
+            return Save();
+        }
     }
 }

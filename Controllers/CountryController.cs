@@ -80,7 +80,7 @@ namespace PokemonReviewApp.Controllers
             var countryTest = _contryinterface.GetContries()
                 .Where(c => c.Name.Trim().ToUpper() == countryCreate.Name.ToUpper()).FirstOrDefault();
 
-            if(countryTest != null)
+            if (countryTest != null)
             {
                 ModelState.AddModelError("", "Esse país já existe");
                 return StatusCode(422, ModelState);
@@ -100,12 +100,45 @@ namespace PokemonReviewApp.Controllers
             }
 
             return Ok("Country criado com sucesso!");
-
-
-            
         }
 
-      
+        [HttpPut("{countryId}")]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public IActionResult UpdateCountry([FromBody] CountryDto country, int countryId)
+        {
+            if (country == null)
+            {
+                return BadRequest();
+            }
+
+            if(countryId != country.Id)
+            {
+                return BadRequest();
+            }
+
+            if (!_contryinterface.ContryExist(countryId))
+            {
+                ModelState.AddModelError("", "País já cadastrado");
+                return StatusCode(400, ModelState);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return NotFound();
+            }
+
+           var mappedCountry = _mapper.Map<Country>(country);
+
+            if (!_contryinterface.UpdateCountry(mappedCountry))
+            {
+                ModelState.AddModelError("", "Houve um erro durante a operação");
+                return StatusCode(500,ModelState);
+            }
+
+            return NoContent();
+        }
 
     }
 }

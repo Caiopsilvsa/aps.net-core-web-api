@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PokemonReviewApp.Dto;
 using PokemonReviewApp.Interfaces;
 using PokemonReviewApp.Models;
+using PokemonReviewApp.Repository;
 
 namespace PokemonReviewApp.Controllers
 {
@@ -109,6 +110,42 @@ namespace PokemonReviewApp.Controllers
 
         }
 
+        [HttpPut("{reviewerId}")]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public IActionResult UpdateReviewer(int reviewerId, [FromBody] ReviewerDto reviewer)
+        {
+            if (reviewer == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (reviewerId != reviewer.Id)
+            {
+                return BadRequest();
+            }
+
+            if (!_reviewer.ReviewerExist(reviewerId))
+            {
+                return NotFound(ModelState);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return NotFound(ModelState);
+            }
+
+            var mappedReviewer = _mapper.Map<Reviewer>(reviewer);
+
+            if (!_reviewer.UpdateReviewer(mappedReviewer))
+            {
+                ModelState.AddModelError("", "Houve um erro durante a operação");
+                return StatusCode(500, ModelState);
+            }
+
+            return NoContent();
+        }
 
     }
 }
