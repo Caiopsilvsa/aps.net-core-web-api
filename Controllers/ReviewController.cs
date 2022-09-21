@@ -12,10 +12,21 @@ namespace PokemonReviewApp.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IReviewInterface _reviewInterface;
-        public ReviewController(IReviewInterface reviewInterface, IMapper mapper)
+        private readonly IPokemonInterface _pokemonInterface;
+        private readonly IReviewerInterface _reviewerInterface;
+
+        public ReviewController
+            (
+            IReviewInterface reviewInterface, 
+            IPokemonInterface pokemonInterface,
+            IReviewerInterface reviewerInterface,
+            IMapper mapper
+            )
         {
             this._mapper = mapper;
             this._reviewInterface = reviewInterface;
+            this._reviewerInterface = reviewerInterface;
+            this._pokemonInterface = pokemonInterface;
         }
 
         [HttpGet]
@@ -65,6 +76,45 @@ namespace PokemonReviewApp.Controllers
             }
 
             return Ok(reviews);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(204, Type = typeof(IEnumerable<Review>))]
+        [ProducesResponseType(400)]
+        public IActionResult CreateReview([FromBody]ReviewDto review, [FromQuery] int pokeId,int reviewerId )
+        {
+            if(review == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var testReview = _reviewInterface.GetReviews()
+                .Where(r => r.Title == review.Title)
+                .FirstOrDefault();
+
+            if(testReview != null)
+            {
+                ModelState.AddModelError("", "Já existe uma review com esse titulo");
+                return StatusCode(422, ModelState);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var mappedReview = _mapper.Map<Review>(review);
+            mappedReview.Pokemon = _pokemonInterface.GetPokemonById(pokeId);
+            mappedReview.Reviewer = _reviewerInterface.GetReviewerById(reviewerId);
+                
+
+            if (!_reviewInterface.CreateReview(mappedReview))
+            {
+                ModelState.AddModelError("", "Houve um erro durante a operação");
+                return StatusCode(500, ModelState);
+            }
+
+            return Ok("Review Criada com sucesso");
         }
     }
 }
