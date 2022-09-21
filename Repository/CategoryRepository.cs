@@ -49,5 +49,11 @@ namespace PokemonReviewApp.Repository
             _datacontext.Update(category);
             return Save();
         }
+
+        public bool DeleteCategory(Category category)
+        {
+           _datacontext.Remove(category);
+            return Save();
+        }
     }
 }
